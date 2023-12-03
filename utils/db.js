@@ -1,28 +1,23 @@
 import { MongoClient } from 'mongodb';
 
+const HOST = process.env.DB_HOST || 'localhost';
+const PORT = process.env.DB_PORT || 27017;
+const DATABASE = process.env.DB_DATABASE || 'files_manager';
+const url = `mongodb://${HOST}:${PORT}`;
+
 class DBClient {
   constructor() {
-    const DB_HOST = process.env.DB_HOST || 'localhost';
-    const DB_PORT = process.env.DB_PORT || 27017;
-    const DB_USER = process.env.DB_USER || 'myUserAdmin';
-    const DB_PASS = process.env.DB_PASS || 'admin';
-    const DB_NAME = process.env.DB_NAME || 'files_manager';
-    const uri = `mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-    this.client = new MongoClient(uri);
-
-    this.client.connect((err) => {
-      if (err) {
-        console.log(err);
+    MongoClient.connect(url, { useNewUrlParser: true }, (err, client) => {
+      if (!err) {
+        this.db = client.db(DATABASE);
       } else {
-        console.log('Connection to database established');
+        this.db = false;
       }
     });
-
-    this.db = this.client.db(DB_NAME);
   }
 
   isAlive() {
-    return this.client.isConnected();
+    return !!this.db;
   }
 
   async nbUsers() {
