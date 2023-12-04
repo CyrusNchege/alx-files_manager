@@ -9,37 +9,50 @@ class UsersController {
     if (!userEmail) {
       return response.status(400).send({ error: 'Missing email' });
     }
+
     const userPassword = request.body.password;
     if (!userPassword) {
       return response.status(400).send({ error: 'Missing password' });
     }
-    const passeordExists = await dbClient.usersCollection.findOne({
+
+    const passwordExists = await dbClient.usersCollection.findOne({
       email: userEmail,
     });
-    if (passeordExists) {
+
+    if (passwordExists) {
       return response.status(400).send({ error: 'Already exist' });
     }
+
     const hashedPassword = sha1(userPassword);
     const user = await dbClient.usersCollection.insertOne({
       email: userEmail,
       password: hashedPassword,
     });
+
     return response.status(201).send({ id: user.insertedId, email: userEmail });
   }
 
   static async getMe(request, response) {
     const token = request.header('X-Token');
+
     if (!token) {
       return response.status(401).send({ error: 'Unauthorized' });
     }
+
     const redisToken = await RedisClient.get(`auth_${token}`);
+
     if (!redisToken) {
       return response.status(401).send({ error: 'Unauthorized' });
     }
-    const user = await dbClient.usersCollection.findOne({ _id: ObjectId(redisToken) });
+
+    const user = await dbClient.usersCollection.findOne({
+      _id: ObjectId(redisToken),
+    });
+
     if (!user) {
       return response.status(401).send({ error: 'Unauthorized' });
     }
+
     return response.status(200).send({ id: user._id, email: user.email });
   }
 }
